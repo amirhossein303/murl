@@ -96,7 +96,7 @@ It's possible to add params to url:
 **Headers**
 
 ```
-./murl 'http://localhost:8080' -H 'User-Agent: Mozilla/5.0' -H 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate' -H 'Referer: http://localhost:8080' -H 'Content-Type: application/json' -H 'Origin: http://localhost:8080' -H 'Connection: keep-alive' -H 'Cookie: session=SESSION'
+./murl 'http://localhost:8080' -H 'User-Agent: Mozilla/5.0' -H 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate' -H 'Referer: http://localhost:8080' -H 'Content-Type: application/json' -H 'Origin: http://localhost:8080' -H 'Connection: keep-alive' -H 'Cookie: session=SESSION' -r h
 [
     ...
     {
