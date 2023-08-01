@@ -74,6 +74,50 @@ note that the `records` are the given {data,headers,params}. check out the sourc
 
 It's possible filter records:<br>to get only headers use `--show-records h` which **h** stand for *headers*
 
+## Examples
+
+It's possible to add params to url:
+```
+./murl 'http://localhost:8080/api/posts?id=1' --params "page=1" --show-records p
+[
+    {
+        "key": "id",
+        "value": "1",
+        "type": "parameter"
+    },
+    {
+        "key": "page",
+        "value": "1",
+        "type": "parameter"
+    } 
+]
+```
+
+**Headers**
+
+```
+./murl 'http://localhost:8080' -H 'User-Agent: Mozilla/5.0' -H 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate' -H 'Referer: http://localhost:8080' -H 'Content-Type: application/json' -H 'Origin: http://localhost:8080' -H 'Connection: keep-alive' -H 'Cookie: session=SESSION'
+[
+    ...
+    {
+        "key": "Accept-Encoding",
+        "value": "gzip, deflate",
+        "type": "header"
+    },
+    {
+        "key": "Referer",
+        "value": "http",
+        "type": "header"
+    },
+    {
+        "key": "Content-Type",
+        "value": "application/json",
+        "type": "header"
+    },
+    ...
+]
+```
+
 ## Reports bugs
 I know there are some bugs there so it would help me you to report it in issue :)
 
