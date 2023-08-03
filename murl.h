@@ -13,6 +13,9 @@
                       "        \"value\": \"%s\",\n" \
                       "        \"type\": \"%s\"\n" \
                       "    }%c\n"
+#define DEFAULT_HTTP_METHOD "GET"
+#define DEFUALT_HTTP_VERSION "1.1"
+
 
 enum error_codes { 
     NO_URL_SPECIFIED = 1,
@@ -29,6 +32,7 @@ typedef struct {
     char*           data;
     char*           headers;
     char*           params;
+    char*           http_version; // defualt HTTP/1.1
 } Option;
 
 typedef struct {
@@ -37,14 +41,15 @@ typedef struct {
     char            type;                      // 'D': Data, 'P': Parameters, 'H': Header   
 } Record;
 
+typedef struct {
+    int             headers_count;
+    int             params_count;
+    int             data_count;
+} RecordCounter;
 
-char *ltrim(char*);
-char *rtrim(char*);
-char *trim(char*);
-void show(char, char*);
-int split(char**, char*, char*);
-int count(char*, char);
-void add_params_from_url(void);
-void add_record(char*, char*, char);
-void add_option(char, char*);
-void help(void);
+typedef struct {
+    char scheme[10];
+    char host[32];
+    int port;
+    char* path;
+} URL;

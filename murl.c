@@ -1,4 +1,11 @@
 /*
+
+           m    m mmmmm  m     
+    mmmmm  #    # #   "# #     
+    # # #  #    # #mmmm" #     
+    # # #  #    # #   "m #     
+    # # #  "mmmm" #    " #mmmmm
+
     MURL: murl is the acronym for "my curl"
 
     Desc:
@@ -7,191 +14,13 @@
 */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
 
-#include "murl.h"
-
-
-Option options = {NULL, "GET", NULL, NULL, NULL};
-Record records[MAX_RECORDS];
-int last_record_index = 0;
-
-
-void help(void) {
-    printf("Usage: %s [options...] <url>\n\n", PROG_NAME);
-    printf("Arguments:\n");
-    printf(" -H, --header               Headers of the request, e.g: 'Accept: plain/text'\n");
-    printf(" -X, --method               HTTP method for the request. default: GET\n");
-    printf(" -d, --data                 Data or body of the request, e.g: 'username=admin'\n");
-    printf(" -p, --params               Query parameters of the request, e.g: 'param1=value'\n");
-    printf(" -h, --help                 Show this text\n");
-    printf(" -v, --version              Version number of the %s\n", PROG_NAME);
-    printf(" -r, --show-records         Show all avaiables records. [ a: all | d: ata | h: headers | p: params ], default: a\n");
-    printf(" -f, --format               Specify output format, [json|csv]. default json\n");
-}
-
-
-char *ltrim(char *s) {
-    while(isspace(*s)) s++;
-    return s;
-}
-
-char *rtrim(char *s) {
-    char* back = s + strlen(s);
-    while(isspace(*--back));
-    *(back+1) = '\0';
-    return s;
-}
-
-char *trim(char *s) {
-    return rtrim(ltrim(s)); 
-}
-
-int count(char* input, char c) {
-    int i = 1;
-    while (*(input++) != '\0') {
-        if (*input == c) i++;
-    }
-    return i;
-}
-
-int split(char** array, char* input, char* del) {
-    int i = 0;
-    while ((array[i] = strtok(i == 0 ? input : NULL, del)) != NULL) {
-        i++;
-    }
-    return i;
-}
-
-void add_params_from_url(void) {
-    char* params;
-    char* key;
-    char* value;
-    char* splitted_params[100];
-
-    // ignore the url origin
-    strtok(options.url, "?");
-    
-    // get params from url if exists
-    params = strtok(NULL, "?");
-    if (params != NULL) {
-        for (int i = 0; i < split(splitted_params, params, "&"); i++) {
-            key = strtok(splitted_params[i], DATA_DELIMITER);
-            value = strtok(NULL, DATA_DELIMITER);
-            if (key == NULL || value == NULL) {
-                printf("error: invalid params from url has been set, format for params: '<key>=<value>'\n");
-                printf("try --help for more information\n");
-                exit(BAD_INPUT);
-            }
-            add_record(key, value, 'p');
-        }
-    }
-}
-
-void show(char r, char* fmt) {
-    int f_records = 0;
-    if (strcmp(RECORD_TYPE(r), "unknown") == 0) {
-        printf("error: invalid record type given: '%c'\n", r);
-        printf("try --help for more information\n");
-        exit(BAD_INPUT);
-    }
-    if (last_record_index == 0) {
-        printf("no records!\n");
-        exit(0);
-    }
-    if (strcmp(fmt, "json") == 0) {
-        for (int i = 0; i < last_record_index; i++) { if (r == 'A' || r == records[i].type) {f_records++;}}
-        printf("[\n");
-        for (int i = 0; i < last_record_index; i++) {
-            if (r == 'a' || r == records[i].type) {
-                f_records--;
-                printf(RECORD_PRETTY_JSON,
-                    records[i].key, records[i].value, RECORD_TYPE(records[i].type), ((f_records == 0) ? ' ' : ','));
-            }
-        }
-        printf("]\n");
-    } else if (strcmp(fmt, "csv") == 0) {
-        printf("key,value,type\n");
-        for (int i = 0; i < last_record_index; i++) {
-            if (r == 'a' || r == records[i].type) {
-                printf("%s,%s,%s\n", records[i].key, records[i].value, RECORD_TYPE(records[i].type));
-            }
-        }
-    }
-}
-
-void add_record(char* key, char* value, char type) {
-    Record r = {key, value, type};
-    if (last_record_index < MAX_RECORDS) {
-        records[last_record_index++] = r;
-        return;
-    }
-    printf("error: maximum records reached!\n");
-    printf("currently only %d records acceptable!\n", MAX_RECORDS);
-    exit(MAX_RECORD_REACHED);
-}
-
-void add_option(char type, char* input) {
-    char *key;
-    char *value;
-    int l, i;
-    char* splitted_records[100];
-    switch (type) {
-        case 'd':
-            // e.g: "username=admin&password=1234"
-            l = split(splitted_records, input, "&");
-            for (i = 0;i < l; i++) {
-                key = strtok(splitted_records[i], DATA_DELIMITER);
-                value = strtok(NULL, DATA_DELIMITER);
-                if (key == NULL || value == NULL) {
-                    printf("error: invalid input --data given, format for data: '<key>=<value>'\n");
-                    printf("try --help for more information\n");
-                    exit(BAD_INPUT);
-                }
-                add_record(key, value, type);
-            }
-            break;
-        case 'h':
-            // e.g: "Content-type: application/json"
-            l = split(splitted_records, input, "\n");
-            for (i = 0;i < l; i++) { 
-                key = strtok(splitted_records[i], HEADER_DELIMITER);
-                value = strtok(NULL, HEADER_DELIMITER);
-                if (key == NULL || value == NULL) {
-                    printf("error: invalid input --header given, format for headear: '<key>: <value>'\n");
-                    printf("try --help for more information\n");
-                    exit(BAD_INPUT);
-                }
-                add_record(trim(key), trim(value), type);
-            }
-            break;
-        case 'p':
-            // e.g: "page=1&flag=true"
-            l = split(splitted_records, input, "&");
-            for (i = 0; i < l; i++) {
-                key = strtok(splitted_records[i], DATA_DELIMITER);
-                value = strtok(NULL, DATA_DELIMITER);
-                if (key == NULL || value == NULL) {
-                    printf("error: invalid input --params given, format for params: '<key>=<value>'\n");
-                    printf("try --help for more information\n");
-                    exit(BAD_INPUT);
-                }
-                add_record(key, value, type);
-            }
-            break;
-        default:
-            printf("error: unknown option type '%c'\n", type);
-            printf("try --help for more information\n");
-            exit(BAD_INPUT);
-    }
-}
-
+#include "core.h"
 
 
 int main(int argc, char* argv[]) {
     short int url_passed = 0;
+    short int show_preview = 0;
     short int show_options = 0;
     char show_record = 'a';
     short int method_passed = 0;
@@ -217,6 +46,10 @@ int main(int argc, char* argv[]) {
                     show_record = *(++argv)[0];
                     --argc;
                 }
+                continue;
+            }
+            if (strcmp(*argv, "--preview") == 0) {
+                show_preview = 1;
                 continue;
             }
             if (strcmp(*argv, "--format") == 0 || strcmp(*argv, "-f") == 0) {
@@ -263,6 +96,16 @@ int main(int argc, char* argv[]) {
                 argc--;
                 continue;
             }
+            if (strcmp(*argv, "--http-version") == 0) {
+                if (strcmp(*(argv+1), "1.1") == 0 || strcmp(*(argv+1), "3") == 0 || strcmp(*(argv+1), "2") == 0) {
+                    options.http_version = *(++argv);
+                    argc--;
+                    continue;
+                } 
+                printf("error: only http version {HTTP/1.1, HTTP/2, HTTP/3} allowed, it's '%s'\n", *(argv+1));
+                printf("note: only pass the version number, not the 'HTTP/' phrase\n");
+                exit(BAD_INPUT);
+            }
             printf("error: option '%s' is unknown, try --help\n", *argv);
             exit(UNKNOWN_OPTION);
             
@@ -273,6 +116,7 @@ int main(int argc, char* argv[]) {
                 exit(BAD_INPUT);
             }
             options.url = *argv;
+            parse_url(options.url);
             add_params_from_url();
             argc--;
         }
@@ -281,6 +125,11 @@ int main(int argc, char* argv[]) {
         printf("error: 'url' not specified\n");
         printf("try --help for more information\n");
         exit(NO_URL_SPECIFIED);
+    }
+
+    if (show_preview) {
+        preview();
+        exit(0);
     }
 
     if (show_options) {
