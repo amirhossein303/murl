@@ -34,7 +34,7 @@ Option options = {
 URL url = {
     .scheme = "http://",
     .host = "",
-    .port = 80,
+    .port = DEFAULT_PORT,
     .path = NULL
 };
 
@@ -230,6 +230,9 @@ char* get_url_path(char* url) {
         }
         url++;
     }
+    if (strcmp(options.method, "OPTIONS") == 0) {
+        return "*";
+    }
     return "/";
 }
 
@@ -248,7 +251,10 @@ void parse_url_host(char* url, char buff[]) {
         }
         url++;
     }
-    buff[i-1] = '\0';
+    if (buff[i-1] == '/')
+        buff[i-1] = '\0';
+    else
+        buff[i] = '\0';
 }
 
 void parse_url_scheme(char* url, char buff[]) {
@@ -267,12 +273,24 @@ void parse_url_scheme(char* url, char buff[]) {
 }
 
 void parse_url(char* given_url) {
+    char* token;
+    int port = 0;
     url.path = get_url_path(given_url);
     parse_url_scheme(given_url, url.scheme);
     parse_url_host(given_url, url.host);
 
     strtok(url.host, ":");
-    url.port = atol(strtok(NULL, ":"));
+    token = strtok(NULL, ":");
+    if (token != NULL) {
+        port = atol(token);
+        if (port < 0 || port > 65535) {
+            printf("error: invalid port given, range(0, 65536)\n");
+            exit(BAD_INPUT);
+        }
+        if (port) {
+            url.port = port;
+        }
+    }
 }
 
 
@@ -296,5 +314,7 @@ void preview(void) {
             printf("%s=%s%s", records[i].key, records[i].value, (j < record_counter.data_count ? "&" : ""));
         }
     }    
-    printf("\n");
+    if (i) {
+        printf("\n");
+    }
 }

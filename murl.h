@@ -15,6 +15,7 @@
                       "    }%c\n"
 #define DEFAULT_HTTP_METHOD "GET"
 #define DEFUALT_HTTP_VERSION "1.1"
+#define DEFAULT_PORT 80
 
 
 enum error_codes { 

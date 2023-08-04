@@ -77,6 +77,7 @@ int main(int argc, char* argv[]) {
                     exit(BAD_INPUT);
                 }
                 options.method = *(++argv);
+                // printf("%s", options.method);
                 method_passed = 1;
                 argc--;
                 continue;
@@ -116,7 +117,6 @@ int main(int argc, char* argv[]) {
                 exit(BAD_INPUT);
             }
             options.url = *argv;
-            parse_url(options.url);
             add_params_from_url();
             argc--;
         }
@@ -126,7 +126,7 @@ int main(int argc, char* argv[]) {
         printf("try --help for more information\n");
         exit(NO_URL_SPECIFIED);
     }
-
+    parse_url(options.url);
     if (show_preview) {
         preview();
         exit(0);
