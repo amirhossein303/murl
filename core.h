@@ -18,8 +18,8 @@ void help(void);
 void preview(void);
 char* get_url_path(char*);
 void parse_url_host(char*, char[]);
-void parse_url_scheme(char*, char[]);
 void parse_url(char* url);
+int has_header(char*);
 
 
 Option options = {
@@ -257,27 +257,24 @@ void parse_url_host(char* url, char buff[]) {
         buff[i] = '\0';
 }
 
-void parse_url_scheme(char* url, char buff[]) {
-    short int slash = 0;
-    short int i = 0;
-    while (*url != '\0') {
-        if (slash < 2) {
-            buff[i++] = *url;
-        }
-        if (*url == '/') {
-            slash++;
-        }
-        url++;
-    }
-    buff[i] = '\0';
-}
-
 void parse_url(char* given_url) {
     char* token;
+    int has_http = strncmp("http://", given_url, 7) == 0 ? 1 : strncmp("https://", given_url, 8) == 0 ? 2 : 0;
+    int final_url_length = strlen(given_url) + (has_http == 1 ? 7 : has_http == 2 ? 8 : 0);
+    char final_url[final_url_length]; 
+    if (has_http == 0) {
+        sprintf(final_url, "%s%s", url.scheme, given_url);
+    } else {
+        sprintf(final_url, "%s", given_url);
+    }
+
+    if (has_http == 2) {
+        sprintf(url.scheme, "https://");
+    }
+
     int port = 0;
-    url.path = get_url_path(given_url);
-    parse_url_scheme(given_url, url.scheme);
-    parse_url_host(given_url, url.host);
+    url.path = get_url_path(final_url);
+    parse_url_host(final_url, url.host);
 
     strtok(url.host, ":");
     token = strtok(NULL, ":");
@@ -297,16 +294,14 @@ void parse_url(char* given_url) {
 void preview(void) {
     int i, j;
     printf("%s %s HTTP/%s\n", options.method, url.path, options.http_version);
-    printf("Host %s\n", url.host);
-
+    printf("Host: %s\n", url.host);
+    // required headers (use defaults if not provides) : content-length, host, content-type, user-agent
     // display the headers
     for (i = 0; i<last_record_index ; i++) {
         if (records[i].type == 'h') {
             printf("%s: %s\n", records[i].key, records[i].value);
         }
     }
-    printf("\n");
-
     // display the 
     for (i = 0, j = 0; i<last_record_index; i++) {
         if (records[i].type == 'd') {
@@ -317,4 +312,13 @@ void preview(void) {
     if (i) {
         printf("\n");
     }
+}
+
+int has_header(char* header) {
+    for (int i=0; i < last_record_index; i++) {
+        if (records[i].type == 'h' && strcmp(records[i].key, header) == 0) {
+            return 1;
+        }
+    }
+    return 0;
 }

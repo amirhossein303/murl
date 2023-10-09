@@ -77,7 +77,6 @@ int main(int argc, char* argv[]) {
                     exit(BAD_INPUT);
                 }
                 options.method = *(++argv);
-                // printf("%s", options.method);
                 method_passed = 1;
                 argc--;
                 continue;
