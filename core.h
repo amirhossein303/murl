@@ -20,7 +20,10 @@ char* get_url_path(char*);
 void parse_url_host(char*, char[]);
 void parse_url(char* url);
 int has_header(char*);
-
+void add_require_headers(void);
+void to_lower(char*, char*);
+int get_content_length(void);
+char* get_request_credentials();
 
 Option options = {
     .url = NULL,
@@ -57,7 +60,6 @@ void help(void) {
     printf(" --preview                  Display the preview of http request\n");
     printf(" --http-version             Change the HTTP version, allowed ['HTTP/1.1', 'HTTP/2', 'HTTP/3']\n");
 }
-
 
 char *ltrim(char *s) {
     while(isspace(*s)) s++;
@@ -219,7 +221,6 @@ void add_option(char type, char* input) {
     }
 }
 
-
 char* get_url_path(char* url) {
     short int slash = 0;
     while (*url != '\0') {
@@ -260,7 +261,7 @@ void parse_url_host(char* url, char buff[]) {
 void parse_url(char* given_url) {
     char* token;
     int has_http = strncmp("http://", given_url, 7) == 0 ? 1 : strncmp("https://", given_url, 8) == 0 ? 2 : 0;
-    int final_url_length = strlen(given_url) + (has_http == 1 ? 7 : has_http == 2 ? 8 : 0);
+    int final_url_length = strlen(given_url) + (has_http == 0 ? 7 : 0);
     char final_url[final_url_length]; 
     if (has_http == 0) {
         sprintf(final_url, "%s%s", url.scheme, given_url);
@@ -290,35 +291,104 @@ void parse_url(char* given_url) {
     }
 }
 
-
 void preview(void) {
-    int i, j;
-    printf("%s %s HTTP/%s\n", options.method, url.path, options.http_version);
-    printf("Host: %s\n", url.host);
-    // required headers (use defaults if not provides) : content-length, host, content-type, user-agent
-    // display the headers
-    for (i = 0; i<last_record_index ; i++) {
-        if (records[i].type == 'h') {
-            printf("%s: %s\n", records[i].key, records[i].value);
-        }
-    }
-    // display the 
-    for (i = 0, j = 0; i<last_record_index; i++) {
-        if (records[i].type == 'd') {
-            j++;
-            printf("%s=%s%s", records[i].key, records[i].value, (j < record_counter.data_count ? "&" : ""));
-        }
-    }    
-    if (i) {
-        printf("\n");
-    }
+    get_request_credentials();
+    // int i, j;
+    // printf("%s %s HTTP/%s\n", options.method, url.path, options.http_version);
+    
+    // for (i = 0, j = 0; i<last_record_index ; i++) {
+    //     if (records[i].type == 'p') {
+    //         j++;
+    //         printf("%s=%s%s", records[i].key, records[i].value, (j < record_counter.params_count ? "&" : ""));
+    //     }
+    // }
+    // printf("\n");
+    
+
+    // // display the headers
+    // for (i = 0; i<last_record_index ; i++) {
+    //     if (records[i].type == 'h') {
+    //         printf("%s: %s\n", records[i].key, records[i].value);
+    //     }
+    // }
+    // // display body
+    // for (i = 0, j = 0; i<last_record_index; i++) {
+    //     if (records[i].type == 'd') {
+    //         j++;
+    //         printf("%s=%s%s", records[i].key, records[i].value, (j < record_counter.data_count ? "&" : ""));
+    //     }
+    // }    
+    // if (i) {
+    //     printf("\n");
+    // }
 }
 
 int has_header(char* header) {
+    char lower_header[100];
     for (int i=0; i < last_record_index; i++) {
-        if (records[i].type == 'h' && strcmp(records[i].key, header) == 0) {
+        to_lower(records[i].key, lower_header);
+        if (records[i].type == 'h' && strcmp(lower_header, header) == 0) {
             return 1;
         }
     }
     return 0;
+}
+
+void add_require_headers(void) {
+    int data_length;
+    if (!has_header("host")) {
+        add_record("Host", url.host, 'h');
+    }
+    if (!has_header("accept")) {
+        add_record("Accept", "*/*", 'h');
+    }
+    if (!has_header("content-type")) {
+        add_record("Content-type", "text/html; charset=UTF-8", 'h');
+    }
+    if (!has_header("user-agent")) {
+        add_record("User-agent", AGENT, 'h');
+    }
+    if ((data_length = get_content_length()) > 0) {
+        if (!has_header("content-length")) {
+            char length_string[100];
+            sprintf(length_string, "%d", data_length);
+            add_record("Content-length", length_string, 'h');
+        }    
+    }
+    
+}
+
+void to_lower(char* string, char result[]) {
+    while (*string != '\0') {
+        *result = tolower(*string);
+        string++;
+        result++;
+    }
+    *result = '\0';
+}
+
+int get_content_length(void) {
+    int len = 0;
+    for (int i = 0; i < last_record_index; i++) {
+        if (records[i].type == 'd') {
+            len += strlen(records[i].key) + strlen(records[i].value) + 1;
+        }
+    }
+    return len + record_counter.data_count - 1;    
+}
+
+char* get_request_credentials(void) {
+    char result[1000];
+    printf("%s\n", url.path);
+    // sprintf(result, "%s %s HTTP/%s\n", options.method, url.path, options.http_version);
+    
+    // // for (i = 0, j = 0; i<last_record_index ; i++) {
+    // //     if (records[i].type == 'p') {
+    // //         j++;
+    // //         printf("%s=%s%s", records[i].key, records[i].value, (j < record_counter.params_count ? "&" : ""));
+    // //     }
+    // // }
+    // // printf("\n");
+    // printf("%s\n\n\n", result);
+    return "dd";
 }

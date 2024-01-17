@@ -116,7 +116,6 @@ int main(int argc, char* argv[]) {
                 exit(BAD_INPUT);
             }
             options.url = *argv;
-            add_params_from_url();
             argc--;
         }
     }
@@ -125,7 +124,9 @@ int main(int argc, char* argv[]) {
         printf("try --help for more information\n");
         exit(NO_URL_SPECIFIED);
     }
+    printf("%s\n", options.url);
     parse_url(options.url);
+    add_require_headers();
     if (show_preview) {
         preview();
         exit(0);

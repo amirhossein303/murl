@@ -1,6 +1,6 @@
 #define PROG_NAME "murl"
 #define VERSION "0.0.1"
-
+#define AGENT PROG_NAME "/" VERSION
 #define MAX_RECORDS 1000
 #define KEY_LEN 100
 #define VALUE_LEN 255
